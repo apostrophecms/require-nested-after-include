@@ -1,0 +1,56 @@
+@mixin my-safe-mixin {
+  display: block;
+  clear: both;
+}
+
+@mixin foo {
+  display: block;
+  clear: both;
+
+  & {
+    font-weight: bold;
+  }
+}
+
+.a {
+  color: red;
+
+  &--bar {
+    font-weight: bold;
+  }
+
+  .nested-rule {
+    font-weight: normal;
+  }
+
+  & {
+    font-weight: normal;
+  }
+}
+
+.b {
+  color: red;
+
+  & {
+    font-size: 20px;
+  }
+
+  & {
+    font-weight: bold;
+  }
+}
+
+.c {
+  @include my-safe-mixin;
+  font-size: 16px;
+}
+
+.d {
+  color: red;
+  @include my-safe-mixin;
+  font-size: 16px;
+}
+
+.e {
+  @include foo;
+}

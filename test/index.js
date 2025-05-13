@@ -5,35 +5,67 @@
 const { exec } = require('node:child_process');
 
 const ERROR_MESSAGE =
-  'Expected "& { ... }" block after "@include" at-rule if declarations are present. See https://sass-lang.com/documentation/breaking-changes/mixed-decls/';
+  'Cannot mix declarations and nested rules/at-rules. Group them together or wrap declarations in a nested "& { }" block. See https://sass-lang.com/documentation/breaking-changes/mixed-decls/';
 
-describe('@apostrophecms/require-nested-after-include stylelint rule', function() {
+describe('@apostrophecms/stylelint-no-mixed-decls stylelint rule', function() {
   this.timeout(10000);
 
-  it('should fail when a declaration after an at-rule is not scoped into a `& { ... }` block', function(done) {
-    exec('npx stylelint test/bad.scss', (error, stdout, stderr) => {
-      if (!stderr.includes(ERROR_MESSAGE)) {
-        throw new Error(`Expected error message: ${ERROR_MESSAGE}`);
-      }
-      done();
-    });
+  it('should fail when css contains nested rules and declarations mixed together', async function() {
+    const { stdout, stderr } = await runStylelint('test/bad-1.scss');
+
+    if (stdout) {
+      throw new Error(`Unexpected output: ${stdout}`);
+    }
+
+    if (!stderr.includes(ERROR_MESSAGE)) {
+      throw new Error(`Expected error message: ${ERROR_MESSAGE}`);
+    }
   });
 
-  it('should pass when a declaration after an at-rule is scoped into a `& { ... }` block', function(done) {
-    exec('npx stylelint test/good-1.scss', (error, stdout, stderr) => {
-      if (stderr.includes(ERROR_MESSAGE)) {
-        throw new Error(`Unexpected error message: ${ERROR_MESSAGE}`);
-      }
-      done();
-    });
+  it('should fail when css contains unsafe mixins and declarations mixed together', async function() {
+    const { stdout, stderr } = await runStylelint('test/bad-2.scss');
+
+    if (stdout) {
+      throw new Error(`Unexpected output: ${stdout}`);
+    }
+
+    if (!stderr.includes(ERROR_MESSAGE)) {
+      throw new Error(`Expected error message: ${ERROR_MESSAGE}`);
+    }
   });
 
-  it('should pass when there is no declaration after an at-rule', function(done) {
-    exec('npx stylelint test/good-2.scss', (error, stdout, stderr) => {
-      if (stderr.includes(ERROR_MESSAGE)) {
-        throw new Error(`Unexpected error message: ${ERROR_MESSAGE}`);
-      }
-      done();
-    });
+  it('should fail when css contains unsafe/undeclared mixins and declarations mixed together', async function() {
+    const { stdout, stderr } = await runStylelint('test/bad-3.scss');
+
+    if (stdout) {
+      throw new Error(`Unexpected output: ${stdout}`);
+    }
+
+    if (!stderr.includes(ERROR_MESSAGE)) {
+      throw new Error(`Expected error message: ${ERROR_MESSAGE}`);
+    }
+  });
+
+  it('should pass when css contains nested rules and scoped declarations', async function() {
+    const { stdout, stderr } = await runStylelint('test/good.scss');
+
+    if (stdout) {
+      throw new Error(`Unexpected output: ${stdout}`);
+    }
+
+    if (stderr.includes(ERROR_MESSAGE)) {
+      throw new Error(`Unexpected error message: ${ERROR_MESSAGE}`);
+    }
   });
 });
+
+function runStylelint(filePath) {
+  return new Promise((resolve, reject) => {
+    exec(`npx stylelint ${filePath}`, (error, stdout, stderr) => {
+      resolve({
+        stdout,
+        stderr
+      });
+    });
+  });
+}
